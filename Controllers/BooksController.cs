@@ -8,6 +8,8 @@ using Microsoft.EntityFrameworkCore;
 using BookLibrary.Data;
 using BookLibrary.Model;
 using Microsoft.AspNetCore.JsonPatch;
+using BookLibrary.Services.Implementation;
+using BookLibrary.Services.Interface;
 
 namespace BookLibrary.Controllers
 {
@@ -16,56 +18,49 @@ namespace BookLibrary.Controllers
     public class BooksController : ControllerBase
     {
         private readonly ApplicationDbContext _context;
-
-        public BooksController(ApplicationDbContext context)
+        private readonly IBookService _bookService;
+        public BooksController(ApplicationDbContext context, IBookService bookService)
         {
             _context = context;
+            _bookService = bookService;
         }
 
         [HttpGet]
         public async Task<ActionResult<IEnumerable<Books>>> GetBooksList() //return list of books
         {
-            return await _context.BooksList.ToListAsync();
+
+            if (_bookService.GetAllBooks != null)
+            {
+                return Ok(await _bookService.GetAllBooks());
+            }
+            return NotFound();
+
         }
 
         [HttpGet("{id}")]
         public async Task<ActionResult<Books>> GetBooks(int id) //single book
         {
-            var books = await _context.BooksList.FindAsync(id);
+            var book = await _bookService.GetBooks(id);
 
-            if (books == null)
+            if (book == null)
             {
                 return NotFound();
             }
 
-            return books;
+            return Ok(book);
         }
 
         [HttpPut("{id}")]
-        public async Task<IActionResult> PutBooks(int id, Books books)
+        public async Task<IActionResult> PutBooks(int id, Books book)
         {
-            if (id != books.Id)
+            if (id != book.Id)
             {
                 return BadRequest();
             }
+            var result = await _bookService.PutBooks(id, book);
 
-            _context.Entry(books).State = EntityState.Modified;
-
-            try
-            {
-                await _context.SaveChangesAsync();
-            }
-            catch (DbUpdateConcurrencyException)
-            {
-                if (!BooksExists(id))
-                {
-                    return NotFound();
-                }
-                else
-                {
-                    throw;
-                }
-            }
+            if (!result)
+                return NotFound();
 
             return NoContent();
         }
@@ -73,25 +68,19 @@ namespace BookLibrary.Controllers
         [HttpPost]
         public async Task<ActionResult<Books>> PostBooks(Books books)
         {
-            _context.BooksList.Add(books);
-            await _context.SaveChangesAsync();
-
+            _bookService.PostBooks(books);
             return CreatedAtAction("GetBooks", new { id = books.Id }, books);
         }
 
         [HttpDelete("{id}")]
         public async Task<IActionResult> DeleteBooks(int id)
         {
-            var books = await _context.BooksList.FindAsync(id);
-            if (books == null)
+            if (await _bookService.DeleteBooks(id))
             {
-                return NotFound();
+                return NoContent();
+
             }
-
-            _context.BooksList.Remove(books);
-            await _context.SaveChangesAsync();
-
-            return NoContent();
+            return BadRequest();
         }
         [HttpPatch("{id}")]
         public async Task<IActionResult> PatchBooks(int id, [FromBody] JsonPatchDocument<Books> patchDoc)
@@ -127,9 +116,6 @@ namespace BookLibrary.Controllers
 
             return NoContent();
         }
-
-
-
         private bool BooksExists(int id)
         {
             return _context.BooksList.Any(e => e.Id == id);
