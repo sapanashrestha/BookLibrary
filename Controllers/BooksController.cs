@@ -10,6 +10,9 @@ using BookLibrary.Model;
 using Microsoft.AspNetCore.JsonPatch;
 using BookLibrary.Services.Implementation;
 using BookLibrary.Services.Interface;
+using BookLibrary.Mapper;
+using BookLibrary.DTO;
+using AutoMapper;
 
 namespace BookLibrary.Controllers
 {
@@ -19,35 +22,43 @@ namespace BookLibrary.Controllers
     {
         private readonly ApplicationDbContext _context;
         private readonly IBookService _bookService;
-        public BooksController(ApplicationDbContext context, IBookService bookService)
+        private readonly IMapper _mapper;
+        public BooksController(ApplicationDbContext context, IBookService bookService, IMapper mapper)
         {
             _context = context;
             _bookService = bookService;
+            _mapper = mapper;
         }
 
         [HttpGet]
-        public async Task<ActionResult<IEnumerable<Books>>> GetBooksList() //return list of books
+        public async Task<ActionResult<IEnumerable<GetBooksDTO>>> GetBooksList() //return list of books
         {
-
-            if (_bookService.GetAllBooks != null)
+            //if (_bookService.GetAllBooks != null)
+            //{
+            //    return Ok(await _bookService.GetAllBooks());
+            //}
+            //return NotFound();
+            var books = await _bookService.GetAllBooks();
+            if (books != null)
             {
-                return Ok(await _bookService.GetAllBooks());
+                var booksDTO = _mapper.Map<IEnumerable<GetBooksDTO>>(books);
+                return Ok(booksDTO);
             }
             return NotFound();
 
         }
 
         [HttpGet("{id}")]
-        public async Task<ActionResult<Books>> GetBooks(int id) //single book
+        public async Task<ActionResult<GetBooksDTO>> GetBooks(int id) //single book
         {
             var book = await _bookService.GetBooks(id);
 
-            if (book == null)
+            if (book != null)
             {
-                return NotFound();
+                var bookDTO = _mapper.Map<GetBooksDTO>(book);
+                return Ok(bookDTO);
             }
-
-            return Ok(book);
+            return NotFound();
         }
 
         [HttpPut("{id}")]
@@ -63,6 +74,8 @@ namespace BookLibrary.Controllers
                 return NotFound();
 
             return NoContent();
+
+
         }
 
         [HttpPost]
