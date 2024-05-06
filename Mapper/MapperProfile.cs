@@ -8,7 +8,9 @@ namespace BookLibrary.Mapper
     {
         public MapperProfile()
         {
-            CreateMap<Books, GetBooksDTO>();
+            CreateMap<Books, GetBooksDTO>().ReverseMap();
+            CreateMap<Books, PostBooksDTO>().ReverseMap();
+            CreateMap<Books, PutBooksDTO>().ReverseMap();
         }
     }
 }

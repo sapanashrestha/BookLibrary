@@ -33,11 +33,6 @@ namespace BookLibrary.Controllers
         [HttpGet]
         public async Task<ActionResult<IEnumerable<GetBooksDTO>>> GetBooksList() //return list of books
         {
-            //if (_bookService.GetAllBooks != null)
-            //{
-            //    return Ok(await _bookService.GetAllBooks());
-            //}
-            //return NotFound();
             var books = await _bookService.GetAllBooks();
             if (books != null)
             {
@@ -62,27 +57,29 @@ namespace BookLibrary.Controllers
         }
 
         [HttpPut("{id}")]
-        public async Task<IActionResult> PutBooks(int id, Books book)
+        public async Task<IActionResult> PutBooks(int id, PutBooksDTO bookDTO)
         {
-            if (id != book.Id)
+            if (id != bookDTO.Id)
             {
                 return BadRequest();
             }
+
+            var book = _mapper.Map<Books>(bookDTO);
+
             var result = await _bookService.PutBooks(id, book);
 
             if (!result)
                 return NotFound();
 
             return NoContent();
-
-
         }
 
         [HttpPost]
-        public async Task<ActionResult<Books>> PostBooks(Books books)
+        public async Task<ActionResult<PostBooksDTO>> PostBooks(Books books)
         {
-            _bookService.PostBooks(books);
-            return CreatedAtAction("GetBooks", new { id = books.Id }, books);
+            var bookDTO = _mapper.Map<PostBooksDTO>(books); 
+            var createdBook = _bookService.PostBooks(books);
+            return CreatedAtAction("GetBooks", new { id = createdBook.Id }, bookDTO);
         }
 
         [HttpDelete("{id}")]

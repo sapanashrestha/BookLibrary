@@ -1,8 +1,6 @@
-﻿using System.ComponentModel.DataAnnotations;
-
-namespace BookLibrary.DTO
+﻿namespace BookLibrary.DTO
 {
-    public class GetBooksDTO
+    public class PutBooksDTO
     {
         public int Id { get; set; }
         public string Title { get; set; }
@@ -10,6 +8,5 @@ namespace BookLibrary.DTO
         public string Publication { get; set; }
         public DateTime PublicationDate { get; set; }
         public decimal Price { get; set; }
-
     }
 }
