@@ -31,10 +31,9 @@ namespace BookLibrary.Repository.Implementation
         {
             return await _dbSet.ToListAsync();
         }
-
         public async Task<T> Get(int id)
         {
-           return await _dbSet.FindAsync(id); ;
+           return await _dbSet.FindAsync(id); 
         }
         public async Task<bool> Put(int id, T entity)
         {
@@ -47,7 +46,7 @@ namespace BookLibrary.Repository.Implementation
         }
         public async Task<T> Post(T entity)
         {
-            _context.Add(entity);
+            _dbSet.Add(entity);
             await _context.SaveChangesAsync();
             return entity;
 

@@ -4,6 +4,7 @@ using BookLibrary.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -11,9 +12,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace BookLibrary.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    partial class ApplicationDbContextModelSnapshot : ModelSnapshot
+    [Migration("20240508041254_libraryRefactor")]
+    partial class libraryRefactor
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -136,6 +139,9 @@ namespace BookLibrary.Migrations
                     b.Property<int>("BookId")
                         .HasColumnType("int");
 
+                    b.Property<int>("BooksId")
+                        .HasColumnType("int");
+
                     b.Property<decimal>("FineAmount")
                         .HasColumnType("decimal(18,2)");
 
@@ -150,7 +156,7 @@ namespace BookLibrary.Migrations
 
                     b.HasKey("LibraryRecordId");
 
-                    b.HasIndex("BookId");
+                    b.HasIndex("BooksId");
 
                     b.HasIndex("StudentId");
 
@@ -319,7 +325,7 @@ namespace BookLibrary.Migrations
                 {
                     b.HasOne("BookLibrary.Model.Books", "Books")
                         .WithMany()
-                        .HasForeignKey("BookId")
+                        .HasForeignKey("BooksId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 

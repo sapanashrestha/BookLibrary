@@ -75,10 +75,10 @@ namespace BookLibrary.Controllers
         }
 
         [HttpPost]
-        public async Task<ActionResult<PostBooksDTO>> PostBooks(Books books)
+        public async Task<ActionResult<PostBooksDTO>> PostBooks(PostBooksDTO books)
         {
-            var bookDTO = _mapper.Map<PostBooksDTO>(books); 
-            var createdBook = _bookService.PostBooks(books);
+            var bookDTO = _mapper.Map<Books>(books); 
+            var createdBook = await _bookService.PostBooks(bookDTO);
             return CreatedAtAction("GetBooks", new { id = createdBook.Id }, bookDTO);
         }
 
