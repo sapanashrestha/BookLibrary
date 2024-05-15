@@ -26,7 +26,6 @@ namespace BookLibrary.Repository.Implementation
             await _context.SaveChangesAsync();
             return true;
         }
-
         public async Task<IEnumerable<T>> GetAll()
         {
             return await _dbSet.ToListAsync();
@@ -49,9 +48,6 @@ namespace BookLibrary.Repository.Implementation
             _dbSet.Add(entity);
             await _context.SaveChangesAsync();
             return entity;
-
         }
-
-
     }
 }

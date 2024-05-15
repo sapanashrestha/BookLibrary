@@ -11,16 +11,12 @@ namespace BookLibrary.Model
 
         [ForeignKey("Books")]
         public int BookId { get; set; } //book Id
-        public Books Books { get; set; }
+        public Books Books { get; set; } 
 
         [ForeignKey("Student")]
         public int StudentId { get; set; } 
         public Student Student { get; set; }
-        public DateTime IssuedDate { get; set; }
-        public DateTime ReturnDate { get; set; }
-        public decimal FineAmount { get; set; }
-
-
-
+        public DateTime IssuedDate { get; set; } // borrow dto
+        public DateTime ReturnDate { get; set; } // return dto
     }
 }

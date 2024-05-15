@@ -23,28 +23,23 @@ namespace BookLibrary.Services.Implementation
                 return true;
           return false;
         }
-
         public IEnumerable<Books> GetBooks()
         {
             throw new NotImplementedException();
         }
-
         public async Task<Books> GetBooks(int id)
         {          
             return await _genericRepository.Get(id);
 
         }
-
         public bool PatchBooks(int id, [FromBody] JsonPatchDocument<Books> patchDoc)
         {
             throw new NotImplementedException();
         }
-
         public async Task<Books> PostBooks(Books book)
         {
            return await _genericRepository.Post(book);
         }
-
         public async Task<bool> PutBooks(int id, Books book)
         {
            if( await _genericRepository.Put(id, book))

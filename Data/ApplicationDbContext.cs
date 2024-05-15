@@ -12,6 +12,7 @@ namespace BookLibrary.Data
         public DbSet<Books> BooksList { get; set; }
         public DbSet<Student> StudentList { get; set; }
         public DbSet<LibraryRecord> LibraryRecord { get; set; }
+        public DbSet<FineRecord> FineRecords { get; set; }
        
 
     }
