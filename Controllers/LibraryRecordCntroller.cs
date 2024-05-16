@@ -1,5 +1,6 @@
 ﻿using BookLibrary.Data;
 using BookLibrary.Model;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -15,7 +16,7 @@ namespace BookLibrary.Controllers
         {
             _context = context;
         }
-
+        [Authorize]
         // POST: api/LibraryRecord/BorrowBook
         [HttpPost("BorrowBook")]
         public async Task<IActionResult> BorrowBook(int studentId, int bookId)

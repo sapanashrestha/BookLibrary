@@ -87,7 +87,6 @@ namespace API.Controllers
                 Email = model.Email,
                 SecurityStamp = Guid.NewGuid().ToString(),
                 UserName = model.Username,
-                RefreshToken = GenerateRefreshToken(),
             };
             var result = await _userManager.CreateAsync(user, model.Password);
             if (!result.Succeeded)
@@ -109,7 +108,6 @@ namespace API.Controllers
                 Email = model.Email,
                 SecurityStamp = Guid.NewGuid().ToString(),
                 UserName = model.Username,
-                RefreshToken = GenerateRefreshToken(),
             };
             var result = await _userManager.CreateAsync(user, model.Password);
             if (!result.Succeeded)
