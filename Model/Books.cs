@@ -11,6 +11,7 @@ namespace BookLibrary.Model
         public string Publication { get; set; }
         public DateTime PublicationDate { get; set; }
         public decimal Price { get; set; }
+        public int Quantity { get; set; }
 
     }
 }

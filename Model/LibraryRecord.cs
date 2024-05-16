@@ -16,7 +16,7 @@ namespace BookLibrary.Model
         [ForeignKey("Student")]
         public int StudentId { get; set; } 
         public Student Student { get; set; }
-        public DateTime IssuedDate { get; set; } // borrow dto
-        public DateTime ReturnDate { get; set; } // return dto
+        public DateTime IssuedDate { get; set; } 
+        public DateTime ReturnDate { get; set; } 
     }
 }
