@@ -13,6 +13,7 @@ using BookLibrary.Services.Interface;
 using BookLibrary.Mapper;
 using BookLibrary.DTO;
 using AutoMapper;
+using Microsoft.AspNetCore.Authorization;
 
 namespace BookLibrary.Controllers
 {
@@ -40,7 +41,6 @@ namespace BookLibrary.Controllers
                 return Ok(booksDTO);
             }
             return NotFound();
-
         }
 
         [HttpGet("{id}")]
@@ -73,13 +73,29 @@ namespace BookLibrary.Controllers
 
             return NoContent();
         }
-
         [HttpPost]
+        // [Authorize]
         public async Task<ActionResult<PostBooksDTO>> PostBooks(PostBooksDTO books)
         {
-            var bookDTO = _mapper.Map<Books>(books); 
+            var bookDTO = _mapper.Map<Books>(books);
             var createdBook = await _bookService.PostBooks(bookDTO);
             return CreatedAtAction("GetBooks", new { id = createdBook.Id }, bookDTO);
+        }
+
+        [HttpPost("BookAtBulk")]
+        public async Task<ActionResult<IEnumerable<GetBooksDTO>>> PostBooksList([FromBody] List<PostBooksDTO> books)
+        {
+            if (books == null || !books.Any())
+                return BadRequest("No books provided");
+
+            var bookEntities = _mapper.Map<List<Books>>(books);
+
+            _context.BooksList.AddRange(bookEntities);
+            await _context.SaveChangesAsync();
+
+            var createdBookDTOs = _mapper.Map<List<GetBooksDTO>>(bookEntities);
+
+            return CreatedAtAction(nameof(GetBooksList), createdBookDTOs);
         }
 
         [HttpDelete("{id}")]

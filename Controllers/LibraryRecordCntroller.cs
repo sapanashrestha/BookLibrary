@@ -82,10 +82,13 @@ namespace BookLibrary.Controllers
             {
                 return NotFound("Library record not found");
             }
-
+            var book = await _context.BooksList.FindAsync(libraryRecord.BookId);
+            if (book == null)
+            {
+                return NotFound("Book not found");
+            }
             libraryRecord.ReturnDate = DateTime.Now;
 
-            // Calculate any fine 
             var fineAmount = CalculateFine(libraryRecord);
             if (fineAmount > 0)
             {
@@ -96,6 +99,7 @@ namespace BookLibrary.Controllers
                 };
                 _context.FineRecords.Add(fineRecord);
             }
+            book.Quantity += 1;
 
             await _context.SaveChangesAsync();
 
@@ -105,7 +109,7 @@ namespace BookLibrary.Controllers
         // Helper method to calculate fine based on return date and issued date
         private decimal CalculateFine(LibraryRecord libraryRecord)
         {
-            const decimal finePerDay = 0.50m; // Fine per day
+            const decimal finePerDay = 0.50m;
             var daysLate = (int)(DateTime.Now - libraryRecord.ReturnDate).TotalDays;
             if (daysLate > 0)
             {
