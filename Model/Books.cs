@@ -1,4 +1,5 @@
 ﻿using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations.Schema;
 
 namespace BookLibrary.Model
 {
@@ -12,6 +13,10 @@ namespace BookLibrary.Model
         public DateTime PublicationDate { get; set; }
         public decimal Price { get; set; }
         public int Quantity { get; set; }
+        public string ImageUrl { get; set; }
+        
+        //[NotMapped]
+        //public IFormFile ImageFile { get; set; } ----> not necessarily needed
 
     }
 }

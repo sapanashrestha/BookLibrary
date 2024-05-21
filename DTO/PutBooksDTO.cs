@@ -9,6 +9,7 @@
         public DateTime PublicationDate { get; set; }
         public decimal Price { get; set; }
         public int Quantity { get; set; }
-
+        public IFormFile Image { get; set; }
+        public string ImageUrl { get; set; }
     }
 }

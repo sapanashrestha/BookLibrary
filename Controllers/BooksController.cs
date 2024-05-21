@@ -77,9 +77,23 @@ namespace BookLibrary.Controllers
         // [Authorize]
         public async Task<ActionResult<PostBooksDTO>> PostBooks(PostBooksDTO books)
         {
-            var bookDTO = _mapper.Map<Books>(books);
-            var createdBook = await _bookService.PostBooks(bookDTO);
-            return CreatedAtAction("GetBooks", new { id = createdBook.Id }, bookDTO);
+            if (books == null)
+            {
+                return BadRequest("Invalid book data.");
+            }
+
+            var book = _mapper.Map<Books>(books);
+
+            if (books.Image != null)
+            {
+                var imageFileName = UploadImage(books.Image);
+                book.ImageUrl = Url.Content($"~/images/books/{imageFileName}");
+            }
+
+            var createdBook = await _bookService.PostBooks(book);
+            var bookToReturn = _mapper.Map<GetBooksDTO>(createdBook);
+
+            return CreatedAtAction("GetBooks", new { id = createdBook.Id }, bookToReturn);
         }
 
         [HttpPost("BookAtBulk")]
@@ -146,5 +160,37 @@ namespace BookLibrary.Controllers
         {
             return _context.BooksList.Any(e => e.Id == id);
         }
+        private string UploadImage(IFormFile image)
+        {
+            if (image == null || image.Length == 0)
+                return null;
+
+            var uploadsFolder = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot/images/books");
+            if (!Directory.Exists(uploadsFolder))
+                Directory.CreateDirectory(uploadsFolder);
+
+            var uniqueFileName = Guid.NewGuid().ToString() + Path.GetExtension(image.FileName);
+            var filePath = Path.Combine(uploadsFolder, uniqueFileName);
+
+            using (var fileStream = new FileStream(filePath, FileMode.Create))
+            {
+                image.CopyTo(fileStream);
+            }
+
+            return uniqueFileName;
+        }
+
+        //private void DeleteImage(string fileName)
+        //{
+        //    if (string.IsNullOrEmpty(fileName))
+        //        return;
+
+        //    var filePath = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot/images/books", fileName);
+        //    if (File.Exists(filePath))
+        //    {
+        //        File.Delete(filePath);
+        //    }
+        //}
+
     }
 }
