@@ -1,5 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Http;
@@ -14,6 +13,8 @@ using BookLibrary.Mapper;
 using BookLibrary.DTO;
 using AutoMapper;
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Hosting;
+using Newtonsoft.Json;
 
 namespace BookLibrary.Controllers
 {
@@ -24,11 +25,13 @@ namespace BookLibrary.Controllers
         private readonly ApplicationDbContext _context;
         private readonly IBookService _bookService;
         private readonly IMapper _mapper;
-        public BooksController(ApplicationDbContext context, IBookService bookService, IMapper mapper)
+        private readonly IWebHostEnvironment _webHostEnvironment;
+        public BooksController(ApplicationDbContext context, IBookService bookService, IMapper mapper, IWebHostEnvironment webHostEnvironment)
         {
             _context = context;
             _bookService = bookService;
             _mapper = mapper;
+            _webHostEnvironment = webHostEnvironment;
         }
 
         [HttpGet]
@@ -96,13 +99,90 @@ namespace BookLibrary.Controllers
             return CreatedAtAction("GetBooks", new { id = createdBook.Id }, bookToReturn);
         }
 
-        [HttpPost("BookAtBulk")]
-        public async Task<ActionResult<IEnumerable<GetBooksDTO>>> PostBooksList([FromBody] List<PostBooksDTO> books)
-        {
-            if (books == null || !books.Any())
-                return BadRequest("No books provided");
+        //[HttpPost("BookAtBulk")]
+        //public async Task<ActionResult> PostBooksList([FromForm] List<IFormFile> images, [FromForm] List<PostBulkBooksDTO> books)
+        //{
+        //    if (books == null || !books.Any())
+        //        return BadRequest("No books provided");
+        //    if (images == null || images.Count != books.Count)
+        //        return BadRequest("Number of images and books must match.");
+        //    List<Books> bookEntities = new List<Books>();
+        //    for (int i = 0; i < books.Count; i++)
+        //    {
+        //        var bookDTO = books[i];
+        //        if (bookDTO == null)
+        //            return BadRequest("Invalid book data.");
+        //        var book = new Books
+        //        {
+        //            Title = bookDTO.Title,
+        //            Author = bookDTO.Author,
+        //            Publication = bookDTO.Publication,
+        //            PublicationDate = bookDTO.PublicationDate,
+        //            Price = bookDTO.Price,
+        //            Quantity = bookDTO.Quantity
+        //        };
+        //        var image = images[i];
+        //        if (image != null)
+        //        {
+        //            var imageFileName = UploadImage(image);
+        //            book.ImageUrl = Url.Content($"~/images/books/{imageFileName}");
+        //        }
+        //        bookEntities.Add(book);
+        //    }
+        //    _context.BooksList.AddRange(bookEntities);
+        //    await _context.SaveChangesAsync();
+        //    var createdBookDTOs = _mapper.Map<List<GetBooksDTO>>(bookEntities);
+        //    return CreatedAtAction(nameof(GetBooksList), createdBookDTOs);
+        //}
 
-            var bookEntities = _mapper.Map<List<Books>>(books);
+        [HttpPost("BookAtBulk")]
+        public async Task<ActionResult> PostBooksList([FromForm] IFormFileCollection images, [FromForm] string booksJson)
+        {
+            if (string.IsNullOrEmpty(booksJson))
+            {
+                return BadRequest("No books provided");
+            }
+
+            var books = JsonConvert.DeserializeObject<List<PostBulkBooksDTO>>(booksJson);
+            if (books == null || !books.Any())
+            {
+                return BadRequest("No books provided");
+            }
+
+            if (images == null || images.Count != books.Count)
+            {
+                return BadRequest("Number of images and books must match.");
+            }
+
+            List<Books> bookEntities = new List<Books>();
+
+            for (int i = 0; i < books.Count; i++)
+            {
+                var bookDTO = books[i];
+                if (bookDTO == null)
+                {
+                    return BadRequest("Invalid book data.");
+                }
+
+                var book = new Books
+                {
+                    Title = bookDTO.Title,
+                    Author = bookDTO.Author,
+                    Publication = bookDTO.Publication,
+                    PublicationDate = bookDTO.PublicationDate,
+                    Price = bookDTO.Price,
+                    Quantity = bookDTO.Quantity
+                };
+
+                var image = images[i];
+                if (image != null)
+                {
+                    var imageFileName = UploadImage(image);
+                    book.ImageUrl = Url.Content($"~/images/books/{imageFileName}");
+                }
+
+                bookEntities.Add(book);
+            }
 
             _context.BooksList.AddRange(bookEntities);
             await _context.SaveChangesAsync();
@@ -112,14 +192,23 @@ namespace BookLibrary.Controllers
             return CreatedAtAction(nameof(GetBooksList), createdBookDTOs);
         }
 
+
         [HttpDelete("{id}")]
         public async Task<IActionResult> DeleteBooks(int id)
         {
+            var book = await _bookService.GetBooks(id);
+           
+            if (book == null)
+            {
+                return NotFound();
+            }
+            DeleteImage(book.ImageUrl);
+
             if (await _bookService.DeleteBooks(id))
             {
                 return NoContent();
-
             }
+
             return BadRequest();
         }
         [HttpPatch("{id}")]
@@ -130,14 +219,11 @@ namespace BookLibrary.Controllers
             {
                 return NotFound();
             }
-
             patchDoc.ApplyTo(book, ModelState);
-
             if (!ModelState.IsValid)
             {
                 return BadRequest(ModelState);
             }
-
             try
             {
                 await _context.SaveChangesAsync();
@@ -153,7 +239,6 @@ namespace BookLibrary.Controllers
                     throw;
                 }
             }
-
             return NoContent();
         }
         private bool BooksExists(int id)
@@ -179,18 +264,15 @@ namespace BookLibrary.Controllers
 
             return uniqueFileName;
         }
-
-        //private void DeleteImage(string fileName)
-        //{
-        //    if (string.IsNullOrEmpty(fileName))
-        //        return;
-
-        //    var filePath = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot/images/books", fileName);
-        //    if (File.Exists(filePath))
-        //    {
-        //        File.Delete(filePath);
-        //    }
-        //}
-
+        private void DeleteImage(string imageUrl)
+        {
+            if (string.IsNullOrEmpty(imageUrl))
+                return;
+            var filePath = Path.Combine(_webHostEnvironment.WebRootPath, "images/books", Path.GetFileName(imageUrl));
+            if (System.IO.File.Exists(filePath))
+            {
+                System.IO.File.Delete(filePath);
+            }
+        }
     }
 }
