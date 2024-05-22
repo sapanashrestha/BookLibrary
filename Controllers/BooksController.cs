@@ -59,6 +59,22 @@ namespace BookLibrary.Controllers
             return NotFound();
         }
 
+        [HttpGet("ByTitle/{title}")]
+        public async Task<ActionResult<IEnumerable<GetBooksDTO>>> GetBooksByTitle(string title)
+        {
+            var books = await _context.BooksList
+                .Where(book => book.Title.Contains(title))
+                .ToListAsync();
+
+            if (books != null && books.Any())
+            {
+                var booksDTO = _mapper.Map<IEnumerable<GetBooksDTO>>(books);
+                return Ok(booksDTO);
+            }
+            return NotFound();
+        }
+
+
         [HttpPut("{id}")]
         public async Task<IActionResult> PutBooks(int id, PutBooksDTO bookDTO)
         {
@@ -142,28 +158,23 @@ namespace BookLibrary.Controllers
             {
                 return BadRequest("No books provided");
             }
-
             var books = JsonConvert.DeserializeObject<List<PostBulkBooksDTO>>(booksJson);
             if (books == null || !books.Any())
             {
                 return BadRequest("No books provided");
             }
-
             if (images == null || images.Count != books.Count)
             {
                 return BadRequest("Number of images and books must match.");
             }
-
             List<Books> bookEntities = new List<Books>();
-
             for (int i = 0; i < books.Count; i++)
-            {
+            { 
                 var bookDTO = books[i];
                 if (bookDTO == null)
                 {
                     return BadRequest("Invalid book data.");
                 }
-
                 var book = new Books
                 {
                     Title = bookDTO.Title,
@@ -173,25 +184,19 @@ namespace BookLibrary.Controllers
                     Price = bookDTO.Price,
                     Quantity = bookDTO.Quantity
                 };
-
                 var image = images[i];
                 if (image != null)
                 {
                     var imageFileName = UploadImage(image);
                     book.ImageUrl = Url.Content($"~/images/books/{imageFileName}");
                 }
-
                 bookEntities.Add(book);
             }
-
             _context.BooksList.AddRange(bookEntities);
             await _context.SaveChangesAsync();
-
             var createdBookDTOs = _mapper.Map<List<GetBooksDTO>>(bookEntities);
-
-            return CreatedAtAction(nameof(GetBooksList), createdBookDTOs);
+           return CreatedAtAction(nameof(GetBooksList), createdBookDTOs);
         }
-
 
         [HttpDelete("{id}")]
         public async Task<IActionResult> DeleteBooks(int id)
