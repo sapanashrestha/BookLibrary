@@ -60,20 +60,22 @@ namespace BookLibrary.Controllers
         }
 
         [HttpGet("ByTitle/{title}")]
-        public async Task<ActionResult<IEnumerable<GetBooksDTO>>> GetBooksByTitle(string title)
+        public async Task<ActionResult<IQueryable<GetBooksDTO>>> GetBooksByTitle(string title)
         {
-            var books = await _context.BooksList
-                .Where(book => book.Title.Contains(title))
-                .ToListAsync();
+            var firstCharacter = title.FirstOrDefault(); // Get the first character of the title
 
-            if (books != null && books.Any())
+            var booksQuery = _context.BooksList
+                .Where(b => b.Title.Contains(title) && b.Title.StartsWith(firstCharacter.ToString()))
+                .AsNoTracking();
+
+            if (!await booksQuery.AnyAsync())
             {
-                var booksDTO = _mapper.Map<IEnumerable<GetBooksDTO>>(books);
-                return Ok(booksDTO);
+                return NotFound();
             }
-            return NotFound();
-        }
 
+            var booksDTOQuery = booksQuery.Select(book => _mapper.Map<GetBooksDTO>(book));
+            return Ok(booksDTOQuery);
+        }
 
         [HttpPut("{id}")]
         public async Task<IActionResult> PutBooks(int id, PutBooksDTO bookDTO)
@@ -100,6 +102,11 @@ namespace BookLibrary.Controllers
             {
                 return BadRequest("Invalid book data.");
             }
+            var existingBook = await _bookService.GetBookByTitleAsync(books.Title);
+            if (existingBook != null)
+            {
+                return Conflict("A book with the same title already exists.");
+            }
 
             var book = _mapper.Map<Books>(books);
 
@@ -115,43 +122,45 @@ namespace BookLibrary.Controllers
             return CreatedAtAction("GetBooks", new { id = createdBook.Id }, bookToReturn);
         }
 
-        //[HttpPost("BookAtBulk")]
-        //public async Task<ActionResult> PostBooksList([FromForm] List<IFormFile> images, [FromForm] List<PostBulkBooksDTO> books)
-        //{
-        //    if (books == null || !books.Any())
-        //        return BadRequest("No books provided");
-        //    if (images == null || images.Count != books.Count)
-        //        return BadRequest("Number of images and books must match.");
-        //    List<Books> bookEntities = new List<Books>();
-        //    for (int i = 0; i < books.Count; i++)
-        //    {
-        //        var bookDTO = books[i];
-        //        if (bookDTO == null)
-        //            return BadRequest("Invalid book data.");
-        //        var book = new Books
-        //        {
-        //            Title = bookDTO.Title,
-        //            Author = bookDTO.Author,
-        //            Publication = bookDTO.Publication,
-        //            PublicationDate = bookDTO.PublicationDate,
-        //            Price = bookDTO.Price,
-        //            Quantity = bookDTO.Quantity
-        //        };
-        //        var image = images[i];
-        //        if (image != null)
-        //        {
-        //            var imageFileName = UploadImage(image);
-        //            book.ImageUrl = Url.Content($"~/images/books/{imageFileName}");
-        //        }
-        //        bookEntities.Add(book);
-        //    }
-        //    _context.BooksList.AddRange(bookEntities);
-        //    await _context.SaveChangesAsync();
-        //    var createdBookDTOs = _mapper.Map<List<GetBooksDTO>>(bookEntities);
-        //    return CreatedAtAction(nameof(GetBooksList), createdBookDTOs);
-        //}
+		#region commentedcode
+		//[HttpPost("BookAtBulk")]
+		//public async Task<ActionResult> PostBooksList([FromForm] List<PostBulkBooksDTO> books)
+		//{
+		//    if (books == null || !books.Any())
+		//        return BadRequest("No books provided");
+		//    if (images == null || images.Count != books.Count)
+		//        return BadRequest("Number of images and books must match.");
+		//    List<Books> bookEntities = new List<Books>();
+		//    for (int i = 0; i < books.Count; i++)
+		//    {
+		//        var bookDTO = books[i];
+		//        if (bookDTO == null)
+		//            return BadRequest("Invalid book data.");
+		//        var book = new Books
+		//        {
+		//            Title = bookDTO.Title,
+		//            Author = bookDTO.Author,
+		//            Publication = bookDTO.Publication,
+		//            PublicationDate = bookDTO.PublicationDate,
+		//            Price = bookDTO.Price,
+		//            Quantity = bookDTO.Quantity
+		//        };
+		//        var image = images[i];
+		//        if (image != null)
+		//        {
+		//            var imageFileName = UploadImage(image);
+		//            book.ImageUrl = Url.Content($"~/images/books/{imageFileName}");
+		//        }
+		//        bookEntities.Add(book);
+		//    }
+		//    _context.BooksList.AddRange(bookEntities);
+		//    await _context.SaveChangesAsync();
+		//    var createdBookDTOs = _mapper.Map<List<GetBooksDTO>>(bookEntities);
+		//    return CreatedAtAction(nameof(GetBooksList), createdBookDTOs);
+		//}
+		#endregion
 
-        [HttpPost("BookAtBulk")]
+		[HttpPost("BookAtBulk")]
         public async Task<ActionResult> PostBooksList([FromForm] IFormFileCollection images, [FromForm] string booksJson)
         {
             if (string.IsNullOrEmpty(booksJson))
@@ -169,7 +178,7 @@ namespace BookLibrary.Controllers
             }
             List<Books> bookEntities = new List<Books>();
             for (int i = 0; i < books.Count; i++)
-            { 
+            {
                 var bookDTO = books[i];
                 if (bookDTO == null)
                 {
@@ -195,14 +204,14 @@ namespace BookLibrary.Controllers
             _context.BooksList.AddRange(bookEntities);
             await _context.SaveChangesAsync();
             var createdBookDTOs = _mapper.Map<List<GetBooksDTO>>(bookEntities);
-           return CreatedAtAction(nameof(GetBooksList), createdBookDTOs);
+            return CreatedAtAction(nameof(GetBooksList), createdBookDTOs);
         }
 
         [HttpDelete("{id}")]
         public async Task<IActionResult> DeleteBooks(int id)
         {
             var book = await _bookService.GetBooks(id);
-           
+
             if (book == null)
             {
                 return NotFound();

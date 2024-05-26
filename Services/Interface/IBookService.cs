@@ -12,5 +12,6 @@ namespace BookLibrary.Services.Interface
         Task<Books> PostBooks(Books book);
         Task<bool> DeleteBooks(int id);
         bool PatchBooks(int id, [FromBody] JsonPatchDocument<Books> patchDoc);
+        Task<Books> GetBookByTitleAsync(string title);
     }
 }

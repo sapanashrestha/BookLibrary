@@ -1,17 +1,21 @@
-﻿using BookLibrary.Model;
+﻿using BookLibrary.Data;
+using BookLibrary.Model;
 using BookLibrary.Repository.Interface;
 using BookLibrary.Services.Interface;
 using Microsoft.AspNetCore.JsonPatch;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 
 namespace BookLibrary.Services.Implementation
 {
     public class BookService : IBookService
     {
         private readonly IGenericRepository<Books>  _genericRepository;
-        public BookService(IGenericRepository<Books> genericRepository)
+        private readonly ApplicationDbContext _context;
+        public BookService(IGenericRepository<Books> genericRepository, ApplicationDbContext context)
         {
             _genericRepository = genericRepository;
+            _context = context;
         }
         public async Task<IEnumerable<Books>> GetAllBooks()
         {
@@ -45,6 +49,11 @@ namespace BookLibrary.Services.Implementation
            if( await _genericRepository.Put(id, book))
                 return true;
            return false;
+        }
+        public async Task<Books> GetBookByTitleAsync(string title)
+        {
+            return await _context.BooksList.
+                FirstOrDefaultAsync(book => book.Title == title);
         }
     }
 }
