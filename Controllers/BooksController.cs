@@ -34,19 +34,48 @@ namespace BookLibrary.Controllers
             _webHostEnvironment = webHostEnvironment;
         }
 
-        [HttpGet]
-        public async Task<ActionResult<IEnumerable<GetBooksDTO>>> GetBooksList() //return list of books
-        {
-            var books = await _bookService.GetAllBooks();
-            if (books != null)
-            {
-                var booksDTO = _mapper.Map<IEnumerable<GetBooksDTO>>(books);
-                return Ok(booksDTO);
-            }
-            return NotFound();
-        }
+		//[HttpGet]
+		//public async Task<ActionResult<IQueryable<GetBooksDTO>>> GetBooksList() //return list of books
+		//{
+		//    var books = await _bookService.GetAllBooks();
+		//    if (books != null)
+		//    {
+		//        var booksDTO = _mapper.Map<IQueryable<GetBooksDTO>>(books);
+		//        return Ok(booksDTO);
+		//    }
+		//    return NotFound();
+		//}
 
-        [HttpGet("{id}")]
+		[HttpGet]
+		public async Task<ActionResult> GetBooksList(int pageNumber = 1, int pageSize = 6)
+		{
+			var totalBooks = await _context.BooksList.CountAsync();
+			var totalPages = (int)Math.Ceiling(totalBooks / (double)pageSize);
+
+			var books = await _bookService.GetAllBooks();
+			if (books != null)
+			{
+				var paginatedBooks = books
+					.Skip((pageNumber - 1) * pageSize)
+					.Take(pageSize)
+					.ToList();
+
+				var booksDTO = _mapper.Map<List<GetBooksDTO>>(paginatedBooks);
+				var response = new
+				{
+					Data = booksDTO,
+					PageNumber = pageNumber,
+					PageSize = pageSize,
+					TotalPages = totalPages,
+					TotalBooks = totalBooks
+				};
+
+				return Ok(response);
+			}
+			return NotFound();
+		}
+
+		[HttpGet("{id}")]
         public async Task<ActionResult<GetBooksDTO>> GetBooks(int id) //single book
         {
             var book = await _bookService.GetBooks(id);
@@ -62,7 +91,7 @@ namespace BookLibrary.Controllers
         [HttpGet("ByTitle/{title}")]
         public async Task<ActionResult<IQueryable<GetBooksDTO>>> GetBooksByTitle(string title)
         {
-            var firstCharacter = title.FirstOrDefault(); // Get the first character of the title
+            var firstCharacter = title.FirstOrDefault(); 
 
             var booksQuery = _context.BooksList
                 .Where(b => b.Title.Contains(title) && b.Title.StartsWith(firstCharacter.ToString()))
