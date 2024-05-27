@@ -124,7 +124,7 @@ namespace BookLibrary.Controllers
             return NoContent();
         }
         [HttpPost]
-        // [Authorize]
+        //[Authorize]
         public async Task<ActionResult<PostBooksDTO>> PostBooks(PostBooksDTO books)
         {
             if (books == null)
