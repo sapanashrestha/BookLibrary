@@ -284,6 +284,13 @@ namespace BookLibrary.Controllers
             }
             return NoContent();
         }
+
+        [HttpGet]
+        [Route("FuzzySearch")]
+        public async Task<IActionResult> FuzzySearch(string bookName)
+        {
+            return Ok(_context.BooksList.Where(book => _context.FuzzySearch(book.Title) == _context.FuzzySearch(bookName)).ToList()) ; 
+        }
         private bool BooksExists(int id)
         {
             return _context.BooksList.Any(e => e.Id == id);
